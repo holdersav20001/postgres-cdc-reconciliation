@@ -1,0 +1,27 @@
+{
+    "name": "orders-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "postgres-source",
+        "database.port": "5432",
+        "database.user": "sourceuser",
+        "database.password": "sourcepass",
+        "database.dbname": "sourcedb",
+        "database.server.name": "postgres-source",
+        "table.include.list": "public.orders,public.batch_control",
+        "plugin.name": "pgoutput",
+        "publication.name": "orders_pub",
+        "slot.name": "orders_slot",
+        "slot.drop.on.stop": "false",
+        "tombstones.on.delete": "true",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": "true",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "true",
+        "transforms": "unwrap",
+        "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+        "transforms.unwrap.drop.tombstones": "false",
+        "transforms.unwrap.delete.handling.mode": "rewrite"
+    }
+}

@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  postgres-source:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: sourcedb
+      POSTGRES_USER: sourceuser
+      POSTGRES_PASSWORD: sourcepass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-source-data:/var/lib/postgresql/data
+      - ./init-scripts/source:/docker-entrypoint-initdb.d
+    command: 
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    networks:
+      - cdc-network
+
+  postgres-target:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: targetdb
+      POSTGRES_USER: targetuser
+      POSTGRES_PASSWORD: targetpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-target-data:/var/lib/postgresql/data
+      - ./init-scripts/target:/docker-entrypoint-initdb.d
+    networks:
+      - cdc-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - cdc-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - cdc-network
+
+  debezium-connect:
+    image: debezium/connect:2.3.0.Final
+    depends_on:
+      - kafka
+      - postgres-source
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+    networks:
+      - cdc-network
+
+volumes:
+  postgres-source-data:
+  postgres-target-data:
+
+networks:
+  cdc-network:
+    driver: bridge

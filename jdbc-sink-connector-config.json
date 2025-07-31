@@ -1,0 +1,19 @@
+{
+    "name": "jdbc-sink-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.jdbc.JdbcSinkConnector",
+        "tasks.max": "1",
+        "topics": "postgres-source.public.orders",
+        "connection.url": "jdbc:postgresql://postgres-target:5432/targetdb",
+        "connection.username": "targetuser",
+        "connection.password": "targetpass",
+        "insert.mode": "upsert",
+        "delete.enabled": "true",
+        "primary.key.fields": "order_id",
+        "primary.key.mode": "record_key",
+        "schema.evolution": "basic",
+        "table.name.format": "${topic.schema}.${topic.table}",
+        "auto.create": "false",
+        "auto.evolve": "false"
+    }
+}

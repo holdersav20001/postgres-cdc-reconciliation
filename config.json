@@ -1,0 +1,13 @@
+{
+    "feed_dir": "feed_files",
+    "db": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "sourcedb",
+        "user": "sourceuser",
+        "password": "sourcepass"
+    },
+    "batch_size": 100,
+    "customer_id_range": [1, 1000],
+    "amount_range": [10.00, 1000.00]
+}
